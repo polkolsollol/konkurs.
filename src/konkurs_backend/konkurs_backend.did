@@ -1,3 +1,4 @@
 service : {
-    "greet": (text) -> (text) query;
+    "dodaj_uzytkownika": (text, text) -> (text);
+    "zaloguj": (text, text) -> (text) query;
 }
