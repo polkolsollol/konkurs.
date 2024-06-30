@@ -1,4 +1,9 @@
 service : {
     "dodaj_uzytkownika": (text, text) -> (text);
-    "zaloguj": (text, text) -> (text) query;
+    "zaloguj": (text, text) -> (bool) query;
+    "dodaj_awarie": (text) -> ();
+    "odczytaj_awarie": () -> (vec text) query;
+    "usun_awarie": (nat64) -> ();
+    "dodaj_komentarz": (nat64, text) -> ();
+    "odczytaj_zgloszenia": () -> (vec text) query;
 }

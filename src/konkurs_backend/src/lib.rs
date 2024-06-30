@@ -11,6 +11,8 @@ struct User {
 
 thread_local! {
     static UZYTKOWNICY: RefCell<Vec<User>> = RefCell::new(Vec::new());
+    static AWARIE: RefCell<Vec<String>> = RefCell::default();
+    static KOMENTARZE: RefCell<Vec<Vec<String>>> = RefCell::default();
 }
 
 #[init]
@@ -33,27 +35,65 @@ fn dodaj_uzytkownika(username: String, password: String) -> String {
 }
 
 #[query]
-fn zaloguj(username: String, password: String) -> String {
-    let mut attempted_users = String::new();
+fn zaloguj(username: String, password: String) -> bool {
     UZYTKOWNICY.with(|user_storage| {
         let users = user_storage.borrow();
         for user in users.iter() {
             if user.username.to_lowercase() == username.to_lowercase() && user.password == password {
-                return format!("Zalogowano jako {}.", username);
-            } else {
-                if !attempted_users.is_empty() {
-                    attempted_users.push_str(" ");
-                }
-                attempted_users.push_str(&format!("User: {}, ", user.username));
+                return true;
             }
         }
         
-        if !attempted_users.is_empty() {
-            format!("Logowanie nieudane. Spróbowano: {}", attempted_users)
-        } else {
-            "Logowanie nieudane.".to_string()
-        }
+        return false;
     })
 
     
+}
+
+
+#[ic_cdk::update]
+fn dodaj_awarie(awaria: String) {
+    AWARIE.with(|awarie| {
+        awarie.borrow_mut().push(awaria)
+    });
+    KOMENTARZE.with(|komentarze| {
+        komentarze.borrow_mut().push(vec![]);
+    });
+}
+
+#[ic_cdk::query]
+fn odczytaj_awarie() -> Vec<String> {
+    AWARIE.with(|awarie| {
+        awarie.borrow().clone()
+    })
+}
+
+#[ic_cdk::update]
+fn usun_awarie(id_awarii: usize){
+    AWARIE.with(|awarie| {
+        awarie.borrow_mut().remove(id_awarii)
+    });
+    KOMENTARZE.with(|komentarze| {
+        komentarze.borrow_mut().remove(id_awarii)
+    });
+}
+
+#[ic_cdk::update]
+fn dodaj_komentarz(id_awarii: usize, komentarz: String){
+    KOMENTARZE.with(|komentarze| {
+        let mut binding = komentarze.borrow_mut();
+        if let Some(komentarze_awarii) = binding.get_mut(id_awarii) {
+            komentarze_awarii.push(komentarz);
+        } else {
+            // Handle the case where id_awarii is out of bounds
+            ic_cdk::api::trap("Index out of bounds");
+        }
+    });
+}
+
+#[ic_cdk::query]
+fn odczytaj_zgloszenia() -> Vec<String> {
+    AWARIE.with(|awarie| {
+        awarie.borrow().clone()
+    })
 }
