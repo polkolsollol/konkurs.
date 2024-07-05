@@ -1,6 +1,6 @@
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
-use std::cell::RefCell;
+use std::{cell::RefCell, clone};
 use ic_cdk_macros::{init, query, update};
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -9,10 +9,15 @@ struct User {
     password: String,
 }
 
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+struct Awaria {
+    nazwa: String,
+    komentarze: Vec<String>,
+}
+
 thread_local! {
     static UZYTKOWNICY: RefCell<Vec<User>> = RefCell::new(Vec::new());
-    static AWARIE: RefCell<Vec<String>> = RefCell::default();
-    static KOMENTARZE: RefCell<Vec<Vec<String>>> = RefCell::default();
+    static AWARIE: RefCell<Vec<Awaria>> = RefCell::new(Vec::new());
 }
 
 #[init]
@@ -43,57 +48,61 @@ fn zaloguj(username: String, password: String) -> bool {
                 return true;
             }
         }
-        
         return false;
     })
-
-    
 }
 
 
-#[ic_cdk::update]
-fn dodaj_awarie(awaria: String) {
+#[update]
+fn dodaj_awarie(nazwa: String) {
     AWARIE.with(|awarie| {
-        awarie.borrow_mut().push(awaria)
-    });
-    KOMENTARZE.with(|komentarze| {
-        komentarze.borrow_mut().push(vec![]);
-    });
-}
+        awarie.borrow_mut().push(Awaria {
+            nazwa,
+            komentarze: vec![],
+        })
+    })
+} 
 
-#[ic_cdk::query]
-fn odczytaj_awarie() -> Vec<String> {
-    AWARIE.with(|awarie| {
-        awarie.borrow().clone()
+#[query]
+fn odczytaj_awarie() -> Vec<Awaria> {
+    AWARIE.with(|awarie_storage| {
+        let awarie = awarie_storage.borrow().clone();
+        return awarie;
     })
 }
 
-#[ic_cdk::update]
-fn usun_awarie(id_awarii: usize){
+#[update]
+fn usun_awarie(id_awarii: usize) {
     AWARIE.with(|awarie| {
-        awarie.borrow_mut().remove(id_awarii)
-    });
-    KOMENTARZE.with(|komentarze| {
-        komentarze.borrow_mut().remove(id_awarii)
-    });
-}
-
-#[ic_cdk::update]
-fn dodaj_komentarz(id_awarii: usize, komentarz: String){
-    KOMENTARZE.with(|komentarze| {
-        let mut binding = komentarze.borrow_mut();
-        if let Some(komentarze_awarii) = binding.get_mut(id_awarii) {
-            komentarze_awarii.push(komentarz);
+        let mut awarie_mut = awarie.borrow_mut();
+        if id_awarii < awarie_mut.len() {
+            awarie_mut.remove(id_awarii);
         } else {
-            // Handle the case where id_awarii is out of bounds
             ic_cdk::api::trap("Index out of bounds");
         }
     });
 }
 
-#[ic_cdk::query]
-fn odczytaj_zgloszenia() -> Vec<String> {
+#[update]
+fn dodaj_komentarz(id_awarii: usize, komentarz: String) {
     AWARIE.with(|awarie| {
-        awarie.borrow().clone()
-    })
+        let mut awarie_mut = awarie.borrow_mut();
+        if let Some(awaria) = awarie_mut.get_mut(id_awarii) {
+            awaria.komentarze.push(komentarz);
+        } else {
+            ic_cdk::api::trap("Index out of bounds");
+        }
+    });
+}
+
+#[update]
+fn edytuj_awarie(id_awarii: usize, nowa_awaria: String) {
+    AWARIE.with(|awarie| {
+        let mut binding = awarie.borrow_mut();
+        if let Some(existing) = binding.get_mut(id_awarii) {
+            existing.nazwa = nowa_awaria;
+        } else {
+            ic_cdk::api::trap("Index out of bounds");
+        }
+    });
 }
