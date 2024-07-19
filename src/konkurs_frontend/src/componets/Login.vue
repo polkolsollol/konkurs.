@@ -1,6 +1,7 @@
 <script setup>
 import DeviceReports from '../componets/DeviceReports.vue'
 import Rejestracja from '../componets/Rejestracja.vue'
+import UserUI from '../componets/UserUI.vue'
 </script>
 
 <template>
@@ -24,7 +25,7 @@ import Rejestracja from '../componets/Rejestracja.vue'
       </div>
       <div v-else>
         <p>Zalogowano jako {{ username }}</p>
-        <DeviceReports />
+        <UserUI />
       </div>
       <div v-if="!logged">
         <button @click="toggleLogin">Zarejestruj się</button>
@@ -68,6 +69,9 @@ export default {
         },
         async toggleLogin() {
           this.logging = !this.logging;
+        },
+        async logout() {
+            this.logged = false;
         }
     }
 }

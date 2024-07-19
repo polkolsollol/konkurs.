@@ -29,7 +29,7 @@
     },
     methods: {
       async register() {
-        await konkurs_backend.dodaj_uzytkownika(this.username, this.password).then((response) => {
+        await konkurs_backend.dodaj_uzytkownika(this.username, this.password, "user").then((response) => {
           alert(response);
         }).catch((error) => {
           console.error('Błąd podczas rejestracji:', error);

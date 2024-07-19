@@ -1,12 +1,13 @@
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
-use std::{cell::RefCell, clone};
+use std::{borrow::Borrow, cell::RefCell, clone, ptr::null};
 use ic_cdk_macros::{init, query, update};
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 struct User {
     username: String,
     password: String,
+    role: String
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -28,13 +29,13 @@ fn init() {
 }
 
 #[update]
-fn dodaj_uzytkownika(username: String, password: String) -> String {
+fn dodaj_uzytkownika(username: String, password: String, role: String) -> String {
     UZYTKOWNICY.with(|user_storage| {
         let mut users = user_storage.borrow_mut();
         if users.iter().any(|user| user.username == username) {
             return "Użytkownik o tej nazwie już istnieje.".to_string();
         }
-        users.push(User { username, password });
+        users.push(User { username, password, role });
         "Użytkownik dodany pomyślnie.".to_string()
     })
 }
@@ -52,6 +53,18 @@ fn zaloguj(username: String, password: String) -> bool {
     })
 }
 
+#[query]
+fn pokaz_role(username: String) -> String {
+    UZYTKOWNICY.with(|user_storage| {
+        let users = user_storage.borrow();
+        for user in users.iter() {
+            if user.username.to_lowercase() == username.to_lowercase() {
+                return user.role.clone().to_string();
+            }
+        }
+        return "brak uzytkownika".to_string();
+    })
+}
 
 #[update]
 fn dodaj_awarie(nazwa: String) {
@@ -104,5 +117,35 @@ fn edytuj_awarie(id_awarii: usize, nowa_awaria: String) {
         } else {
             ic_cdk::api::trap("Index out of bounds");
         }
+    });
+}
+
+#[update]
+fn nadaj_role(username: String, role: String)
+{
+    UZYTKOWNICY.with(|user_storage| {
+        let mut users = user_storage.borrow_mut();
+        for user in users.iter_mut() {
+            if user.username.to_lowercase() == username.to_lowercase() {
+                user.role = role;
+                return true;
+            }
+        }
+        return false;
+    });
+}
+
+#[update]
+fn zmien_haslo(username: String, new_password: String)
+{
+    UZYTKOWNICY.with(|user_storage| {
+        let mut users = user_storage.borrow_mut();
+        for user in users.iter_mut() {
+            if user.username.to_lowercase() == username.to_lowercase() {
+                user.password = new_password;
+                return true;
+            }
+        }
+        return false;
     });
 }
