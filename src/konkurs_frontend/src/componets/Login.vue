@@ -24,7 +24,7 @@ import UserUI from '../componets/UserUI.vue'
         <p v-if="errorlog" class="error">{{ errorlog }}</p>
       </div>
       <div v-else>
-        <p>Zalogowano jako {{ username }}</p>
+        <p>Zalogowano jako {{ user.username }}</p>
         <UserUI />
       </div>
       <div v-if="!logged">
@@ -46,6 +46,15 @@ import UserUI from '../componets/UserUI.vue'
 <script>
 import { konkurs_backend } from 'declarations/konkurs_backend/index';
 
+class User {
+    constructor(username, password, gmail, role) {
+        this.username = username;
+        this.password = password;
+        this.gmail = gmail;
+        this.role = role;
+    }
+}
+
 export default {
     data() {
         return {
@@ -53,19 +62,29 @@ export default {
             password: "",
             logged: false,
             logging: true,
-            errorlog: ""
+            errorlog: "",
+            user: new User("null", "null", "null", "null")
         };
     },
     methods: {
         async login() {
-            
-            await konkurs_backend.zaloguj(this.username, this.password).then((response) => {
-                if (response == true) {
-                    this.logged = true;
-                } else {
-                    this.errorlog = 'Nieprawidłowa nazwa użytkownika lub hasło ';
-                }
-            });
+          try {
+              const response = await konkurs_backend.zaloguj(this.username, this.password);
+              const [isAuthenticated, userOption] = response;
+
+              if (isAuthenticated) {
+                  this.logged = true;
+                  if (userOption) {
+                      this.user = userOption[0];
+                  }
+              } else {
+                  this.errorlog = 'Nieprawidłowa nazwa użytkownika lub hasło';
+                  this.user = null;
+              }
+          } catch (error) {
+              console.error("Wystąpił błąd podczas logowania:", error);
+              this.errorlog = 'Wystąpił błąd podczas logowania';
+          }
         },
         async toggleLogin() {
           this.logging = !this.logging;

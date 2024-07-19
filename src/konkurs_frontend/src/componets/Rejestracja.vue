@@ -11,6 +11,10 @@
           <input type="password" v-model="password" required>
         </div>
         <div>
+            <label for="gmail">Gmail:</label>
+            <input v-model="gmail" type="text">
+          </div>
+        <div>
           <button type="submit">Zarejestruj</button>
         </div>
       </form>
@@ -24,12 +28,13 @@
     data() {
       return {
         username: "",
-        password: ""
+        password: "",
+        gmail: ""
       };
     },
     methods: {
       async register() {
-        await konkurs_backend.dodaj_uzytkownika(this.username, this.password, "user").then((response) => {
+        await konkurs_backend.dodaj_uzytkownika(this.username, this.password, "user", this.gmail).then((response) => {
           alert(response);
         }).catch((error) => {
           console.error('Błąd podczas rejestracji:', error);

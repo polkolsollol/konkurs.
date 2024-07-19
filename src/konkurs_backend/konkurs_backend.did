@@ -1,16 +1,23 @@
+type User = record {
+    username: text;
+    password: text;
+    gmail: text;
+    role: text;
+};
+
 type Awaria = record {
     nazwa: text;
     komentarze: vec text;
+    owner: User;
 };
 
 service : {
-    "dodaj_uzytkownika": (text, text, text) -> (text);
-    "zaloguj": (text, text) -> (bool) query;
-    "dodaj_awarie": (text) -> ();
+    "dodaj_uzytkownika": (text, text, text, text) -> (text);
+    "zaloguj": (text, text) -> (bool, opt User) query;
+    "dodaj_awarie": (text, User) -> ();
     "odczytaj_awarie": () -> (vec Awaria) query;
     "usun_awarie": (nat64) -> ();
     "dodaj_komentarz": (nat64, text) -> ();
-    "odczytaj_zgloszenia": () -> (vec text) query;
     "edytuj_awarie": (nat64, text) -> ();
     "nadaj_role": (text, text) -> ();
     "zmien_haslo": (text, text) -> ();

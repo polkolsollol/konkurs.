@@ -7,6 +7,7 @@ use ic_cdk_macros::{init, query, update};
 struct User {
     username: String,
     password: String,
+    gmail: String,
     role: String
 }
 
@@ -14,6 +15,8 @@ struct User {
 struct Awaria {
     nazwa: String,
     komentarze: Vec<String>,
+    owner: User,
+
 }
 
 thread_local! {
@@ -29,49 +32,37 @@ fn init() {
 }
 
 #[update]
-fn dodaj_uzytkownika(username: String, password: String, role: String) -> String {
+fn dodaj_uzytkownika(username: String, password: String, role: String, gmail:String) -> String {
     UZYTKOWNICY.with(|user_storage| {
         let mut users = user_storage.borrow_mut();
         if users.iter().any(|user| user.username == username) {
             return "Użytkownik o tej nazwie już istnieje.".to_string();
         }
-        users.push(User { username, password, role });
+        users.push(User { username, password, role, gmail });
         "Użytkownik dodany pomyślnie.".to_string()
     })
 }
 
 #[query]
-fn zaloguj(username: String, password: String) -> bool {
+fn zaloguj(username: String, password: String) -> (bool, Option<User>) {
     UZYTKOWNICY.with(|user_storage| {
         let users = user_storage.borrow();
         for user in users.iter() {
             if user.username.to_lowercase() == username.to_lowercase() && user.password == password {
-                return true;
+                return (true, Some(user.clone()));
             }
         }
-        return false;
-    })
-}
-
-#[query]
-fn pokaz_role(username: String) -> String {
-    UZYTKOWNICY.with(|user_storage| {
-        let users = user_storage.borrow();
-        for user in users.iter() {
-            if user.username.to_lowercase() == username.to_lowercase() {
-                return user.role.clone().to_string();
-            }
-        }
-        return "brak uzytkownika".to_string();
+        (false, None)
     })
 }
 
 #[update]
-fn dodaj_awarie(nazwa: String) {
+fn dodaj_awarie(nazwa: String, owner: User) {
     AWARIE.with(|awarie| {
         awarie.borrow_mut().push(Awaria {
             nazwa,
             komentarze: vec![],
+            owner: owner
         })
     })
 } 
